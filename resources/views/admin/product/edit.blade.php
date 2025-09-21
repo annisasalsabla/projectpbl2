@@ -2,110 +2,594 @@
 
 @section('content')
 <div class="container">
-    <h3>Edit Produk</h3>
-
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold" style="color: #4361ee;">Edit Produk</h2>
+        <a href="{{ route('admin.product.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Kembali
+        </a>
+    </div>
+    
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <strong>Whoops!</strong> Terdapat masalah dengan inputan Anda.<br><br>
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+    
     <form action="{{ route('admin.product.update', $produk->id) }}" method="POST" enctype="multipart/form-data">
-        @csrf @method('PUT')
-
-        <div class="mb-3">
-            <label>Nama Produk</label>
-            <input type="text" name="nama_produk" value="{{ $produk->nama_produk }}" class="form-control" required>
-        </div>
-
-        <div class="mb-3">
-            <label>Kategori</label>
-            <select name="kategori" class="form-control" required>
-                <option value="Anak-anak" {{ $produk->kategori=='Anak-anak'?'selected':'' }}>Anak-anak</option>
-                <option value="Remaja" {{ $produk->kategori=='Remaja'?'selected':'' }}>Remaja</option>
-                <option value="Dewasa" {{ $produk->kategori=='Dewasa'?'selected':'' }}>Dewasa</option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label>Harga Umum</label>
-            <input type="text" id="harga" name="harga" value="{{ number_format($produk->harga, 0, ',', '.') }}" class="form-control">
-        </div>
-
-        <div class="mb-3">
-            <label>Stok Umum</label>
-            <input type="text" id="stok" name="stok" value="{{ number_format($produk->stok, 0, ',', '.') }}" class="form-control">
-        </div>
-
-        <div class="mb-3">
-            <label>Bahan</label>
-            <input type="text" name="bahan" value="{{ $produk->bahan }}" class="form-control" required>
-        </div>
-
-        <div class="mb-3">
-            <label>Deskripsi</label>
-            <textarea name="deskripsi" class="form-control" rows="4" required>{{ $produk->deskripsi }}</textarea>
-        </div>
-
-        <div class="mb-3">
-            <label>Foto Produk Baru (opsional, bisa pilih lebih dari 1)</label>
-            <input type="file" name="photos[]" class="form-control" multiple>
-        </div>
-
-        <div class="mb-3">
-            <label>Foto Produk Saat Ini</label><br>
-            @foreach($produk->photos as $photo)
-                <img src="{{ asset('storage/'.$photo->path_gambar) }}" alt="Foto" width="80" class="me-2 mb-2 rounded">
-            @endforeach
-        </div>
-
-        <div class="mb-3">
-            <label>Panduan Ukuran (gambar opsional)</label>
-            <input type="file" name="panduan_ukuran" class="form-control">
-            @if($produk->panduan_ukuran)
-                <a href="{{ asset('storage/'.$produk->panduan_ukuran) }}" target="_blank">Lihat Panduan Lama</a>
-            @endif
-        </div>
-
-        <hr>
-        <h5>Ukuran (Opsional)</h5>
-        <div id="size-wrapper">
-            @foreach($produk->sizes as $i => $s)
-            <div class="size-item mb-3 border p-3 rounded">
-                <label>Nama Ukuran</label>
-                <input type="text" name="sizes[{{ $i }}][nama_ukuran]" value="{{ $s->nama_ukuran }}" class="form-control mb-2">
-
-                <label>Stok</label>
-                <input type="text" name="sizes[{{ $i }}][stok]" value="{{ number_format($s->stok, 0, ',', '.') }}" class="form-control mb-2">
-
-                <label>Harga</label>
-                <input type="text" name="sizes[{{ $i }}][harga]" value="{{ number_format($s->harga, 0, ',', '.') }}" class="form-control mb-2">
+        @csrf
+        @method('PUT')
+        
+        <!-- Informasi Produk -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <i class="fas fa-info-circle me-2"></i>Informasi Produk
             </div>
-            @endforeach
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Nama Produk <span class="text-danger">*</span></label>
+                        <input type="text" name="nama_produk" class="form-control" placeholder="Masukkan nama produk" value="{{ old('nama_produk', $produk->nama_produk) }}" required>
+                        @error('nama_produk')
+                            <div class="text-danger mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Kategori <span class="text-danger">*</span></label>
+                        <select name="kategori" class="form-select" required>
+                            <option value="">Pilih Kategori</option>
+                            <option value="Anak-anak" {{ old('kategori', $produk->kategori) == 'Anak-anak' ? 'selected' : '' }}>Anak-anak</option>
+                            <option value="Remaja" {{ old('kategori', $produk->kategori) == 'Remaja' ? 'selected' : '' }}>Remaja</option>
+                            <option value="Dewasa" {{ old('kategori', $produk->kategori) == 'Dewasa' ? 'selected' : '' }}>Dewasa</option>
+                        </select>
+                        @error('kategori')
+                            <div class="text-danger mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Harga Umum <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="number" name="harga" class="form-control" placeholder="Masukkan harga umum" value="{{ old('harga', $produk->harga) }}" required>
+                        </div>
+                        @error('harga')
+                            <div class="text-danger mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Stok Umum <span class="text-danger">*</span></label>
+                        <input type="number" name="stok" class="form-control" placeholder="Masukkan stok umum" value="{{ old('stok', $produk->stok) }}" required>
+                        @error('stok')
+                            <div class="text-danger mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Bahan <span class="text-danger">*</span></label>
+                    <input type="text" name="bahan" class="form-control" placeholder="Contoh: Katun, Polyester, dll." value="{{ old('bahan', $produk->bahan) }}" required>
+                    @error('bahan')
+                        <div class="text-danger mt-1">{{ $message }}</div>
+                    @enderror
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Deskripsi <span class="text-danger">*</span></label>
+                    <textarea name="deskripsi" class="form-control" rows="4" placeholder="Jelaskan detail produk, keunggulan, dan informasi lainnya." required>{{ old('deskripsi', $produk->deskripsi) }}</textarea>
+                    @error('deskripsi')
+                        <div class="text-danger mt-1">{{ $message }}</div>
+                    @enderror
+                </div>
+                
+                <div class="d-flex align-items-center mb-3">
+                    <div class="form-check form-switch me-2">
+                        <input class="form-check-input" type="checkbox" name="pre_order" value="1" id="pre_order_toggle" {{ old('pre_order', $produk->pre_order) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="pre_order_toggle">Centang jika produk Pre-Order</label>
+                    </div>
+                </div>
+            </div>
         </div>
-        <button type="button" class="btn btn-secondary" onclick="addSize()">+ Tambah Ukuran Baru</button>
-        <hr>
-
-        <button type="submit" class="btn btn-primary">Update</button>
+        
+        <!-- Foto Produk -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <i class="fas fa-images me-2"></i>Foto Produk
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Unggah satu atau beberapa foto produk (maksimal 5 foto)</p>
+                
+                <div class="file-upload-area" id="productPhotosArea">
+                    <input type="file" name="photos[]" id="productPhotos" class="d-none" multiple accept="image/*">
+                    <div class="file-upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h5>Klik untuk memasukkan gambar</h5>
+                    <p class="text-muted">Format file: JPG, PNG, JPEG (Maksimal 2MB per file)</p>
+                </div>
+                
+                <div class="preview-container mt-3">
+                    <div class="image-preview-container" id="productPhotosPreview">
+                        @foreach($produk->photos as $photo)
+                            <div class="image-preview" data-photo-id="{{ $photo->id }}">
+                                <img src="{{ asset('storage/'.$photo->path_gambar) }}" alt="Foto Produk">
+                                <div class="remove-image" onclick="removeExistingPhoto(this, {{ $photo->id }})">
+                                    <i class="fas fa-times"></i>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                @error('photos')
+                    <div class="text-danger mt-1">{{ $message }}</div>
+                @enderror
+                @error('photos.*')
+                    <div class="text-danger mt-1">{{ $message }}</div>
+                @enderror
+                <input type="hidden" name="deleted_photos" id="deletedPhotos" value="">
+            </div>
+        </div>
+        
+        <!-- Panduan Ukuran -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <i class="fas fa-ruler-combined me-2"></i>Panduan Ukuran
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Unggah gambar panduan ukuran (opsional)</p>
+                
+                <div class="file-upload-area" id="sizeGuideArea">
+                    <input type="file" name="panduan_ukuran" id="sizeGuide" class="d-none" accept="image/*">
+                    <div class="file-upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h5>Klik untuk memasukkan gambar</h5>
+                    <p class="text-muted">Format file: JPG, PNG, JPEG (Maksimal 2MB)</p>
+                </div>
+                
+                <div class="preview-container mt-3">
+                    <div id="sizeGuidePreview">
+                        @if($produk->panduan_ukuran)
+                            <div class="image-preview">
+                                <img src="{{ asset('storage/'.$produk->panduan_ukuran) }}" alt="Panduan Ukuran">
+                                <div class="remove-image" onclick="removeSizeGuide()">
+                                    <i class="fas fa-times"></i>
+                                </div>
+                            </div>
+                            <input type="hidden" name="current_size_guide" value="{{ $produk->panduan_ukuran }}">
+                        @endif
+                    </div>
+                </div>
+                @error('panduan_ukuran')
+                    <div class="text-danger mt-1">{{ $message }}</div>
+                @enderror
+                <input type="hidden" name="remove_size_guide" id="removeSizeGuide" value="0">
+            </div>
+        </div>
+        
+        <!-- Variasi Ukuran -->
+        <div class="card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-layer-group me-2"></i>Variasi Ukuran (Opsional)
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSize()">
+                    <i class="fas fa-plus me-1"></i>Tambah Ukuran
+                </button>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Tambahkan variasi ukuran jika produk memiliki beberapa pilihan ukuran</p>
+                
+                <div id="size-wrapper">
+                    @if(old('sizes') && count(old('sizes')) > 0)
+                        @foreach(old('sizes') as $index => $size)
+                            <div class="size-item mb-3 border p-3 rounded">
+                                <div class="row">
+                                    <div class="col-12 mb-2">
+                                        <label class="form-label">Nama Ukuran</label>
+                                        <input type="text" name="sizes[{{ $index }}][nama_ukuran]" class="form-control" placeholder="Masukkan ukuran" value="{{ $size['nama_ukuran'] ?? '' }}">
+                                    </div>
+                                    <div class="col-12 mb-2">
+                                        <label class="form-label">Stok</label>
+                                        <input type="number" name="sizes[{{ $index }}][stok]" class="form-control" placeholder="Masukkan stok" value="{{ $size['stok'] ?? '' }}">
+                                    </div>
+                                    <div class="col-12 mb-2">
+                                        <label class="form-label">Harga</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">Rp</span>
+                                            <input type="number" name="sizes[{{ $index }}][harga]" class="form-control" placeholder="Masukkan harga" value="{{ $size['harga'] ?? '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="this.parentElement.remove()">
+                                    <i class="fas fa-trash me-1"></i>Hapus Ukuran
+                                </button>
+                            </div>
+                        @endforeach
+                    @elseif($produk->sizes && count($produk->sizes) > 0)
+                        @foreach($produk->sizes as $index => $size)
+                            <div class="size-item mb-3 border p-3 rounded">
+                                <input type="hidden" name="sizes[{{ $index }}][id]" value="{{ $size->id }}">
+                                <div class="row">
+                                    <div class="col-12 mb-2">
+                                        <label class="form-label">Nama Ukuran</label>
+                                        <input type="text" name="sizes[{{ $index }}][nama_ukuran]" class="form-control" placeholder="Masukkan ukuran" value="{{ old('sizes.'.$index.'.nama_ukuran', $size->nama_ukuran) }}">
+                                    </div>
+                                    <div class="col-12 mb-2">
+                                        <label class="form-label">Stok</label>
+                                        <input type="number" name="sizes[{{ $index }}][stok]" class="form-control" placeholder="Masukkan stok" value="{{ old('sizes.'.$index.'.stok', $size->stok) }}">
+                                    </div>
+                                    <div class="col-12 mb-2">
+                                        <label class="form-label">Harga</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">Rp</span>
+                                            <input type="number" name="sizes[{{ $index }}][harga]" class="form-control" placeholder="Masukkan harga" value="{{ old('sizes.'.$index.'.harga', $size->harga) }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="this.parentElement.remove()">
+                                    <i class="fas fa-trash me-1"></i>Hapus Ukuran
+                                </button>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="size-item mb-3 border p-3 rounded">
+                            <div class="row">
+                                <div class="col-12 mb-2">
+                                    <label class="form-label">Nama Ukuran</label>
+                                    <input type="text" name="sizes[0][nama_ukuran]" class="form-control" placeholder="Masukkan ukuran">
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <label class="form-label">Stok</label>
+                                    <input type="number" name="sizes[0][stok]" class="form-control" placeholder="Masukkan stok">
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <label class="form-label">Harga</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Rp</span>
+                                        <input type="number" name="sizes[0][harga]" class="form-control" placeholder="Masukkan harga">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="d-flex gap-2 justify-content-end mt-4">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>Update Produk
+            </button>
+        </div>
     </form>
 </div>
 
-<script>
-function formatNumber(input) {
-    let value = input.value.replace(/\D/g, ""); // hanya angka
-    if (value) {
-        input.value = new Intl.NumberFormat('id-ID').format(value);
-    } else {
-        input.value = "";
+<!-- Modal for Image Preview -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Pratinjau Gambar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="" id="modalPreviewImage" class="img-fluid" alt="Preview">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        margin-bottom: 24px;
     }
-}
+    
+    .card-header {
+        background-color: white;
+        border-bottom: 1px solid #eaeaea;
+        padding: 20px 25px;
+        border-radius: 12px 12px 0 0 !important;
+        font-weight: 600;
+        color: #4361ee;
+        font-size: 1.25rem;
+    }
+    
+    .card-body {
+        padding: 25px;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: #444;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 8px;
+        padding: 12px 16px;
+        border: 1px solid #ddd;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+    }
+    
+    .btn-primary {
+        background-color: #4361ee;
+        border-color: #4361ee;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 600;
+    }
+    
+    .btn-secondary {
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 600;
+    }
+    
+    .image-preview-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .image-preview {
+        width: 150px;
+        height: 150px;
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border: 1px solid #eaeaea;
+        cursor: pointer;
+    }
+    
+    .image-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .remove-image {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #ff4d4f;
+        font-size: 14px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .size-item {
+        background-color: #f8f9fa;
+    }
+    
+    .file-upload-area {
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        padding: 25px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background-color: #fafafa;
+    }
+    
+    .file-upload-area:hover {
+        border-color: #4361ee;
+        background-color: #f0f4ff;
+    }
+    
+    .file-upload-icon {
+        font-size: 42px;
+        color: #4361ee;
+        margin-bottom: 10px;
+    }
+    
+    .preview-container {
+        margin-top: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 20px 15px;
+        }
+        
+        .image-preview {
+            width: 100px;
+            height: 100px;
+        }
+        
+        .btn {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .d-flex.gap-2 {
+            flex-direction: column;
+        }
+        
+        .d-flex.gap-2 .btn {
+            width: 100%;
+        }
+    }
+    
+    .form-check-input:checked {
+        background-color: #4361ee;
+        border-color: #4361ee;
+    }
+</style>
 
-// format saat mengetik
-document.getElementById('harga').addEventListener('input', function() {
-    formatNumber(this);
-});
-document.getElementById('stok').addEventListener('input', function() {
-    formatNumber(this);
-});
-
-// sebelum submit -> hilangkan titik biar masuk DB murni angka
-document.querySelector('form').addEventListener('submit', function() {
-    document.getElementById('harga').value = document.getElementById('harga').value.replace(/\D/g,'');
-    document.getElementById('stok').value = document.getElementById('stok').value.replace(/\D/g,'');
-});
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let sizeIndex = {{ $produk->sizes ? count($produk->sizes) : 1 }};
+        
+        window.addSize = function() {
+            const wrapper = document.getElementById('size-wrapper');
+            const item = document.createElement('div');
+            item.classList.add('size-item', 'mb-3', 'border', 'p-3', 'rounded');
+            item.innerHTML = `
+                <div class="row">
+                    <div class="col-12 mb-2">
+                        <label class="form-label">Nama Ukuran</label>
+                        <input type="text" name="sizes[${sizeIndex}][nama_ukuran]" class="form-control" placeholder="Masukkan ukuran">
+                    </div>
+                    <div class="col-12 mb-2">
+                        <label class="form-label">Stok</label>
+                        <input type="number" name="sizes[${sizeIndex}][stok]" class="form-control" placeholder="Masukkan stok">
+                    </div>
+                    <div class="col-12 mb-2">
+                        <label class="form-label">Harga</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="number" name="sizes[${sizeIndex}][harga]" class="form-control" placeholder="Masukkan harga">
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="this.parentElement.remove()">
+                    <i class="fas fa-trash me-1"></i>Hapus Ukuran
+                </button>
+            `;
+            wrapper.appendChild(item);
+            sizeIndex++;
+        }
+        
+        // Product photos upload handling
+        const productPhotosArea = document.getElementById('productPhotosArea');
+        const productPhotosInput = document.getElementById('productPhotos');
+        const productPhotosPreview = document.getElementById('productPhotosPreview');
+        
+        productPhotosArea.addEventListener('click', () => {
+            productPhotosInput.click();
+        });
+        
+        productPhotosArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            productPhotosArea.style.borderColor = '#4361ee';
+            productPhotosArea.style.backgroundColor = '#f0f4ff';
+        });
+        
+        productPhotosArea.addEventListener('dragleave', () => {
+            productPhotosArea.style.borderColor = '#ddd';
+            productPhotosArea.style.backgroundColor = '#fafafa';
+        });
+        
+        productPhotosArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            productPhotosArea.style.borderColor = '#ddd';
+            productPhotosArea.style.backgroundColor = '#fafafa';
+            
+            if (e.dataTransfer.files.length > 0) {
+                productPhotosInput.files = e.dataTransfer.files;
+                handleFileUpload(productPhotosInput.files, productPhotosPreview, true);
+            }
+        });
+        
+        productPhotosInput.addEventListener('change', () => {
+            handleFileUpload(productPhotosInput.files, productPhotosPreview, true);
+        });
+        
+        // Size guide upload handling
+        const sizeGuideArea = document.getElementById('sizeGuideArea');
+        const sizeGuideInput = document.getElementById('sizeGuide');
+        const sizeGuidePreview = document.getElementById('sizeGuidePreview');
+        
+        sizeGuideArea.addEventListener('click', () => {
+            sizeGuideInput.click();
+        });
+        
+        sizeGuideInput.addEventListener('change', () => {
+            handleFileUpload(sizeGuideInput.files, sizeGuidePreview, false);
+        });
+        
+        // Handle file upload and preview
+        function handleFileUpload(files, previewContainer, multiple) {
+            if (!files || files.length === 0) return;
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                
+                if (!file.type.match('image.*')) {
+                    continue;
+                }
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.classList.add('image-preview');
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    
+                    // Add click event to show image in modal
+                    div.addEventListener('click', function() {
+                        document.getElementById('modalPreviewImage').src = e.target.result;
+                        new bootstrap.Modal(document.getElementById('imagePreviewModal')).show();
+                    });
+                    
+                    const removeBtn = document.createElement('div');
+                    removeBtn.classList.add('remove-image');
+                    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    removeBtn.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        div.remove();
+                    });
+                    
+                    div.appendChild(img);
+                    div.appendChild(removeBtn);
+                    previewContainer.appendChild(div);
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // Function to remove existing photo
+        window.removeExistingPhoto = function(element, photoId) {
+            // Add to deleted photos list
+            const deletedPhotosInput = document.getElementById('deletedPhotos');
+            let deletedPhotos = deletedPhotosInput.value ? deletedPhotosInput.value.split(',') : [];
+            deletedPhotos.push(photoId);
+            deletedPhotosInput.value = deletedPhotos.join(',');
+            
+            // Remove the preview
+            element.parentElement.remove();
+        };
+        
+        // Function to remove size guide
+        window.removeSizeGuide = function() {
+            document.getElementById('removeSizeGuide').value = '1';
+            document.getElementById('sizeGuidePreview').innerHTML = '';
+        };
+    });
 </script>
 @endsection

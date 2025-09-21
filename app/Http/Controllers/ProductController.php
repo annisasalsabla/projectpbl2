@@ -111,6 +111,8 @@ $data['stok']  = $request->stok ? preg_replace('/[^0-9]/', '', $request->stok) :
     $data['harga'] = $request->filled('harga') ? str_replace('.', '', $request->harga) : null;
     $data['stok']  = $request->filled('stok') ? str_replace('.', '', $request->stok) : null;
 
+    $data['pre_order'] = $request->has('pre_order') ? 1 : 0;
+
     // update panduan ukuran jika ada
     if($request->hasFile('panduan_ukuran')){
         $data['panduan_ukuran'] = $request->file('panduan_ukuran')->store('panduan_ukuran','public');

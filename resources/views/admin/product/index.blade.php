@@ -15,6 +15,7 @@
                 <th>Stok Umum</th>
                 <th>Bahan</th>
                 <th>Deskripsi</th>
+                <th>Pre-Order</th>
                 <th>Ukuran</th>
                 <th>Foto Produk</th>
                 <th>Panduan Ukuran</th>
@@ -23,7 +24,8 @@
         </thead>
         <tbody>
         @forelse($produk as $index => $p)
-            <tr>
+
+                    <tr>
                 <td>{{ $index + 1 }}</td>
                 <td>{{ $p->nama_produk }}</td>
                 <td>{{ $p->kategori }}</td>
@@ -38,10 +40,17 @@
                 <td>{{ $p->bahan }}</td>
                 <td>{{ $p->deskripsi }}</td>
                 <td>
+                    @if($p->pre_order)
+                        <span class="badge bg-success">YA</span>
+                    @else
+                        <span class="badge bg-secondary">TIDAK</span>
+                    @endif
+                </td>
+                <td>
                     @forelse($p->sizes as $s)
                         <strong>{{ $s->nama_ukuran }}</strong><br>
-                        Stok: {{ $s->stok }}<br>
-                        Harga: Rp {{ number_format($s->harga,0,',','.') }}<br>
+                        Stok: {{ $s->stok ?? '-' }}<br>
+                        Harga: Rp {{ $s->harga ? number_format($s->harga,0,',','.') : '-' }}<br>
                         <hr>
                     @empty
                         <em>Tidak ada ukuran</em>
@@ -56,22 +65,29 @@
                 </td>
                 <td>
                     @if($p->panduan_ukuran)
-                        <a href="{{ asset('storage/'.$p->panduan_ukuran) }}" target="_blank" class="btn btn-sm btn-info">Lihat</a>
+                        <a href="{{ asset('storage/'.$p->panduan_ukuran) }}" target="_blank">
+                            <img src="{{ asset('storage/'.$p->panduan_ukuran) }}" alt="Panduan Ukuran" width="80" class="mb-2 rounded">
+                        </a>
                     @else
                         <em>-</em>
                     @endif
                 </td>
                 <td>
-                    <a href="{{ route('admin.products.edit',$p->id) }}" class="btn btn-warning btn-sm">Edit</a>
-                    <form action="{{ route('admin.product.destroy',$p->id) }}" method="POST" class="d-inline">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus produk ini?')">Hapus</button>
-                    </form>
-                </td>
+    <a href="{{ route('admin.products.edit', $p->id) }}" class="btn btn-warning btn-sm">Edit</a>
+    
+    <form action="{{ route('admin.products.destroy', $p->id) }}" method="POST" class="d-inline">
+        @csrf 
+        @method('DELETE')
+        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus produk ini?')">
+            Hapus
+        </button>
+    </form>
+</td>
+
             </tr>
         @empty
             <tr>
-                <td colspan="11" class="text-center">Belum ada produk</td>
+                <td colspan="12" class="text-center">Belum ada produk</td>
             </tr>
         @endforelse
         </tbody>

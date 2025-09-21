@@ -145,6 +145,7 @@
             display: flex;
             align-items: center;
             white-space: nowrap;
+            cursor: pointer;
         }
         
         .nav-link:hover, .nav-link.active {
@@ -372,7 +373,6 @@
                             <img src="{{ asset('storage/images/image.png') }}" 
      alt="PICRAFT Logo" 
      width="40" height="40" class="rounded-circle">
-
                         </div>
                         <span class="brand-text">PYCRAFT</span>
                     </a>
@@ -384,23 +384,22 @@
                 <div class="sidebar-nav">
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a href="{{ route('admin.dashboard') }}" class="nav-link active">
+                            <a href="{{ route('admin.dashboard') }}" class="nav-link active" data-page="dashboard">
                                 <i class="bi bi-speedometer2"></i> <span class="link-text">Dashboard</span>
                             </a>
                         </li>
                         <li class="nav-item">
-    <li class="nav-item">
-    <a href="{{ route('admin.products.manage') }}" class="nav-link">
-        <i class="bi bi-box-seam"></i> <span class="link-text">Kelola Produk</span>
-    </a>
-</li>
+                            <a href="{{ route('admin.products.manage') }}" class="nav-link" data-page="products">
+                                <i class="bi bi-box-seam"></i> <span class="link-text">Kelola Produk</span>
+                            </a>
+                        </li>
                         <li class="nav-item">
-                            <a href="#" class="nav-link">
+                            <a href="#" class="nav-link" data-page="orders">
                                 <i class="bi bi-cart-check"></i> <span class="link-text">Pesanan</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="#" class="nav-link">
+                            <a href="#" class="nav-link" data-page="settings">
                                 <i class="bi bi-gear"></i> <span class="link-text">Pengaturan</span>
                             </a>
                         </li>
@@ -428,13 +427,12 @@
                         <small class="text-muted d-block mt-1">Poppy Suhaimi Craft Information System</small>
                     </div>
                     <div class="user-profile">
-    <span class="badge-premium me-3">Admin Panel</span>
-    <div class="avatar me-2">
-        {{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}
-    </div>
-    <span>{{ Auth::user()->name ?? 'Guest' }}</span>
-</div>
-
+                        <span class="badge-premium me-3">Admin Panel</span>
+                        <div class="avatar me-2">
+                            {{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}
+                        </div>
+                        <span>{{ Auth::user()->name ?? 'Guest' }}</span>
+                    </div>
                 </div>
                 
                 <!-- Content Area -->
@@ -451,9 +449,29 @@
             const sidebarToggle = document.getElementById('sidebarToggle');
             const mobileToggle = document.getElementById('mobileToggle');
             const mobileOverlay = document.getElementById('mobileOverlay');
+            const navLinks = document.querySelectorAll('.nav-link');
             
             // Check if we're on mobile
             const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            
+            // Fungsi untuk mengatur highlight pada sidebar
+            function setActiveNavLink() {
+                // Hapus kelas active dari semua link
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                });
+                
+                // Tambahkan kelas active ke link yang diklik
+                this.classList.add('active');
+                
+                // Simpan status aktif di localStorage
+                localStorage.setItem('activeNavItem', this.getAttribute('data-page'));
+            }
+            
+            // Tambahkan event listener untuk setiap link di sidebar
+            navLinks.forEach(link => {
+                link.addEventListener('click', setActiveNavLink);
+            });
             
             // Toggle sidebar on desktop
             sidebarToggle.addEventListener('click', function() {
@@ -507,6 +525,16 @@
                 if (sidebarCollapsed) {
                     sidebar.classList.add('collapsed');
                     mainContent.classList.add('expanded');
+                }
+            }
+            
+            // Load active nav item from localStorage
+            const activeNavItem = localStorage.getItem('activeNavItem');
+            if (activeNavItem) {
+                const activeLink = document.querySelector(`.nav-link[data-page="${activeNavItem}"]`);
+                if (activeLink) {
+                    navLinks.forEach(link => link.classList.remove('active'));
+                    activeLink.classList.add('active');
                 }
             }
         });

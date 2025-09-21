@@ -13,8 +13,7 @@ return new class extends Migration
         
         $table->string('nama_ukuran')->nullable();
         $table->integer('stok')->nullable();
-        $table->decimal('harga', 15, 2)->nullable();
-        
+        $table->decimal('harga', 15, 2)->nullable(); 
         $table->string('panduan_ukuran')->nullable(); // file/gambar opsional
         $table->timestamps();
     });
