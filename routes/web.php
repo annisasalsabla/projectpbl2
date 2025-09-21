@@ -32,17 +32,24 @@ Route::get('/tentang', function () {
 })->name('tentang');
 
 
+
+
 Route::prefix('admin')->name('admin.')->group(function(){
     Route::resource('product', ProductController::class);
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
+    
     Route::get('products/manage', [ProductController::class, 'index'])->name('products.manage');
     Route::get('products/create', [ProductController::class, 'create'])->name('products.create');
     Route::post('products/store', [ProductController::class, 'store'])->name('products.store');
     Route::get('products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
     Route::put('products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    Route::get('products/{id}', [ProductController::class, 'show'])->name('admin.products.show');
+    Route::delete('/admin/product/photo/{id}', [ProductController::class, 'deletePhoto']);
+Route::delete('/admin/product/{id}/remove-size-guide', [ProductController::class, 'deleteSizeGuide']);
+
 });
 
 

@@ -20,7 +20,7 @@
         </div>
     @endif
     
-    <form action="{{ route('admin.product.update', $produk->id) }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('admin.product.update', $produk->id) }}" method="POST" enctype="multipart/form-data" id="productForm">
         @csrf
         @method('PUT')
         
@@ -58,7 +58,8 @@
                         <label class="form-label">Harga Umum <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="number" name="harga" class="form-control" placeholder="Masukkan harga umum" value="{{ old('harga', $produk->harga) }}" required>
+                            <input type="text" name="harga_formatted" id="harga_formatted" class="form-control" placeholder="Masukkan harga umum" value="{{ number_format(old('harga', $produk->harga), 0, ',', '.') }}" required>
+                            <input type="hidden" name="harga" id="harga" value="{{ old('harga', $produk->harga) }}">
                         </div>
                         @error('harga')
                             <div class="text-danger mt-1">{{ $message }}</div>
@@ -107,26 +108,38 @@
             <div class="card-body">
                 <p class="text-muted">Unggah satu atau beberapa foto produk (maksimal 5 foto)</p>
                 
+                <!-- Tampilkan foto yang sudah ada -->
+                <div class="mb-3">
+                    <label class="form-label">Foto Saat Ini</label>
+                    <div class="image-preview-container" id="existingPhotosPreview">
+                        @if($produk->photos && count($produk->photos) > 0)
+                            @foreach($produk->photos as $index => $photo)
+                                <div class="image-preview" data-photo-id="{{ $photo->id }}">
+                                    <img src="{{ asset('storage/' . $photo->path) }}" alt="Foto Produk {{ $index + 1 }}">
+                                    <div class="remove-image" onclick="removeExistingPhoto(this, {{ $photo->id }})">
+                                        <i class="fas fa-times"></i>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            <p class="text-muted">Belum ada foto produk</p>
+                        @endif
+                    </div>
+                </div>
+                
+                <!-- Input untuk foto baru -->
                 <div class="file-upload-area" id="productPhotosArea">
                     <input type="file" name="photos[]" id="productPhotos" class="d-none" multiple accept="image/*">
                     <div class="file-upload-icon">
                         <i class="fas fa-cloud-upload-alt"></i>
                     </div>
-                    <h5>Klik untuk memasukkan gambar</h5>
+                    <h5>Klik untuk menambah gambar baru</h5>
                     <p class="text-muted">Format file: JPG, PNG, JPEG (Maksimal 2MB per file)</p>
                 </div>
                 
+                <!-- Preview foto baru -->
                 <div class="preview-container mt-3">
-                    <div class="image-preview-container" id="productPhotosPreview">
-                        @foreach($produk->photos as $photo)
-                            <div class="image-preview" data-photo-id="{{ $photo->id }}">
-                                <img src="{{ asset('storage/'.$photo->path_gambar) }}" alt="Foto Produk">
-                                <div class="remove-image" onclick="removeExistingPhoto(this, {{ $photo->id }})">
-                                    <i class="fas fa-times"></i>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
+                    <div class="image-preview-container" id="productPhotosPreview"></div>
                 </div>
                 @error('photos')
                     <div class="text-danger mt-1">{{ $message }}</div>
@@ -134,6 +147,8 @@
                 @error('photos.*')
                     <div class="text-danger mt-1">{{ $message }}</div>
                 @enderror
+                
+                <!-- Input untuk foto yang akan dihapus -->
                 <input type="hidden" name="deleted_photos" id="deletedPhotos" value="">
             </div>
         </div>
@@ -146,31 +161,43 @@
             <div class="card-body">
                 <p class="text-muted">Unggah gambar panduan ukuran (opsional)</p>
                 
-                <div class="file-upload-area" id="sizeGuideArea">
-                    <input type="file" name="panduan_ukuran" id="sizeGuide" class="d-none" accept="image/*">
-                    <div class="file-upload-icon">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                    </div>
-                    <h5>Klik untuk memasukkan gambar</h5>
-                    <p class="text-muted">Format file: JPG, PNG, JPEG (Maksimal 2MB)</p>
-                </div>
-                
-                <div class="preview-container mt-3">
-                    <div id="sizeGuidePreview">
+                <!-- Tampilkan panduan ukuran yang sudah ada -->
+                <div class="mb-3">
+                    <label class="form-label">Panduan Ukuran Saat Ini</label>
+                    <div id="existingSizeGuidePreview">
                         @if($produk->panduan_ukuran)
                             <div class="image-preview">
-                                <img src="{{ asset('storage/'.$produk->panduan_ukuran) }}" alt="Panduan Ukuran">
+                                <img src="{{ asset('storage/' . $produk->panduan_ukuran) }}" alt="Panduan Ukuran">
                                 <div class="remove-image" onclick="removeSizeGuide()">
                                     <i class="fas fa-times"></i>
                                 </div>
                             </div>
                             <input type="hidden" name="current_size_guide" value="{{ $produk->panduan_ukuran }}">
+                        @else
+                            <p class="text-muted">Belum ada panduan ukuran</p>
                         @endif
                     </div>
+                </div>
+                
+                <!-- Input untuk panduan ukuran baru -->
+                <div class="file-upload-area" id="sizeGuideArea">
+                    <input type="file" name="panduan_ukuran" id="sizeGuide" class="d-none" accept="image/*">
+                    <div class="file-upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h5>Klik untuk mengganti gambar panduan ukuran</h5>
+                    <p class="text-muted">Format file: JPG, PNG, JPEG (Maksimal 2MB)</p>
+                </div>
+                
+                <!-- Preview panduan ukuran baru -->
+                <div class="preview-container mt-3">
+                    <div id="sizeGuidePreview"></div>
                 </div>
                 @error('panduan_ukuran')
                     <div class="text-danger mt-1">{{ $message }}</div>
                 @enderror
+                
+                <!-- Input untuk menghapus panduan ukuran -->
                 <input type="hidden" name="remove_size_guide" id="removeSizeGuide" value="0">
             </div>
         </div>
@@ -189,32 +216,7 @@
                 <p class="text-muted">Tambahkan variasi ukuran jika produk memiliki beberapa pilihan ukuran</p>
                 
                 <div id="size-wrapper">
-                    @if(old('sizes') && count(old('sizes')) > 0)
-                        @foreach(old('sizes') as $index => $size)
-                            <div class="size-item mb-3 border p-3 rounded">
-                                <div class="row">
-                                    <div class="col-12 mb-2">
-                                        <label class="form-label">Nama Ukuran</label>
-                                        <input type="text" name="sizes[{{ $index }}][nama_ukuran]" class="form-control" placeholder="Masukkan ukuran" value="{{ $size['nama_ukuran'] ?? '' }}">
-                                    </div>
-                                    <div class="col-12 mb-2">
-                                        <label class="form-label">Stok</label>
-                                        <input type="number" name="sizes[{{ $index }}][stok]" class="form-control" placeholder="Masukkan stok" value="{{ $size['stok'] ?? '' }}">
-                                    </div>
-                                    <div class="col-12 mb-2">
-                                        <label class="form-label">Harga</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">Rp</span>
-                                            <input type="number" name="sizes[{{ $index }}][harga]" class="form-control" placeholder="Masukkan harga" value="{{ $size['harga'] ?? '' }}">
-                                        </div>
-                                    </div>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="this.parentElement.remove()">
-                                    <i class="fas fa-trash me-1"></i>Hapus Ukuran
-                                </button>
-                            </div>
-                        @endforeach
-                    @elseif($produk->sizes && count($produk->sizes) > 0)
+                    @if($produk->sizes && count($produk->sizes) > 0)
                         @foreach($produk->sizes as $index => $size)
                             <div class="size-item mb-3 border p-3 rounded">
                                 <input type="hidden" name="sizes[{{ $index }}][id]" value="{{ $size->id }}">
@@ -231,7 +233,8 @@
                                         <label class="form-label">Harga</label>
                                         <div class="input-group">
                                             <span class="input-group-text">Rp</span>
-                                            <input type="number" name="sizes[{{ $index }}][harga]" class="form-control" placeholder="Masukkan harga" value="{{ old('sizes.'.$index.'.harga', $size->harga) }}">
+                                            <input type="text" name="sizes[{{ $index }}][harga_formatted]" class="form-control harga-variasi" placeholder="Masukkan harga" value="{{ number_format(old('sizes.'.$index.'.harga', $size->harga), 0, ',', '.') }}">
+                                            <input type="hidden" name="sizes[{{ $index }}][harga]" class="harga-variasi-hidden" value="{{ old('sizes.'.$index.'.harga', $size->harga) }}">
                                         </div>
                                     </div>
                                 </div>
@@ -255,7 +258,8 @@
                                     <label class="form-label">Harga</label>
                                     <div class="input-group">
                                         <span class="input-group-text">Rp</span>
-                                        <input type="number" name="sizes[0][harga]" class="form-control" placeholder="Masukkan harga">
+                                        <input type="text" name="sizes[0][harga_formatted]" class="form-control harga-variasi" placeholder="Masukkan harga">
+                                        <input type="hidden" name="sizes[0][harga]" class="harga-variasi-hidden">
                                     </div>
                                 </div>
                             </div>
@@ -376,7 +380,7 @@
         position: absolute;
         top: 5px;
         right: 5px;
-        background: white;
+        background: #ff4d4f;
         border-radius: 50%;
         width: 24px;
         height: 24px;
@@ -384,9 +388,15 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        color: #ff4d4f;
+        color: white;
         font-size: 14px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        transition: all 0.3s;
+    }
+    
+    .remove-image:hover {
+        background: #ff1c1f;
+        transform: scale(1.1);
     }
     
     .size-item {
@@ -451,6 +461,78 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         let sizeIndex = {{ $produk->sizes ? count($produk->sizes) : 1 }};
+        let deletedPhotos = [];
+        
+        // Fungsi untuk memformat input harga
+        function formatRupiah(angka, prefix = '') {
+            // Hapus semua karakter selain angka
+            let number_string = angka.replace(/[^,\d]/g, '').toString();
+            
+            // Jika tidak ada angka, return string kosong
+            if (number_string === '') return '';
+            
+            // Konversi ke number
+            let number = parseInt(number_string);
+            
+            // Jika bukan number yang valid, return string kosong
+            if (isNaN(number)) return '';
+            
+            // Format number dengan pemisah ribuan
+            return number.toLocaleString('id-ID');
+        }
+        
+        // Fungsi untuk menghapus format dan mendapatkan nilai numerik
+        function unformatRupiah(rupiah) {
+            // Hapus semua karakter selain angka
+            return parseInt(rupiah.replace(/\./g, '')) || 0;
+        }
+        
+        // Event listener untuk input harga umum
+        const hargaFormattedInput = document.getElementById('harga_formatted');
+        const hargaHiddenInput = document.getElementById('harga');
+        
+        hargaFormattedInput.addEventListener('input', function(e) {
+            // Simpan posisi kursor
+            const cursorPosition = this.selectionStart;
+            
+            // Format nilai
+            this.value = formatRupiah(this.value);
+            
+            // Perbarui nilai hidden
+            hargaHiddenInput.value = unformatRupiah(this.value);
+            
+            // Kembalikan posisi kursor
+            this.setSelectionRange(cursorPosition, cursorPosition);
+        });
+        
+        // Event listener untuk input harga variasi
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('harga-variasi')) {
+                const hiddenInput = e.target.nextElementSibling;
+                
+                // Simpan posisi kursor
+                const cursorPosition = e.target.selectionStart;
+                
+                // Format nilai
+                e.target.value = formatRupiah(e.target.value);
+                
+                // Perbarui nilai hidden
+                hiddenInput.value = unformatRupiah(e.target.value);
+                
+                // Kembalikan posisi kursor
+                e.target.setSelectionRange(cursorPosition, cursorPosition);
+            }
+        });
+        
+        // Event listener untuk mencegah karakter non-digit
+        document.addEventListener('keypress', function(e) {
+            if (e.target.id === 'harga_formatted' || e.target.classList.contains('harga-variasi')) {
+                // Hanya menerima digit
+                if (isNaN(parseInt(e.key)) && e.key !== 'Backspace' && e.key !== 'Delete') {
+                    e.preventDefault();
+                }
+            }
+        });
         
         window.addSize = function() {
             const wrapper = document.getElementById('size-wrapper');
@@ -470,7 +552,8 @@
                         <label class="form-label">Harga</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="number" name="sizes[${sizeIndex}][harga]" class="form-control" placeholder="Masukkan harga">
+                            <input type="text" name="sizes[${sizeIndex}][harga_formatted]" class="form-control harga-variasi" placeholder="Masukkan harga">
+                            <input type="hidden" name="sizes[${sizeIndex}][harga]" class="harga-variasi-hidden">
                         </div>
                     </div>
                 </div>
@@ -573,23 +656,38 @@
             }
         }
         
-        // Function to remove existing photo
+        // Fungsi untuk menghapus foto yang sudah ada
         window.removeExistingPhoto = function(element, photoId) {
-            // Add to deleted photos list
-            const deletedPhotosInput = document.getElementById('deletedPhotos');
-            let deletedPhotos = deletedPhotosInput.value ? deletedPhotosInput.value.split(',') : [];
+            // Tambahkan ID foto ke array yang akan dihapus
             deletedPhotos.push(photoId);
-            deletedPhotosInput.value = deletedPhotos.join(',');
+            document.getElementById('deletedPhotos').value = JSON.stringify(deletedPhotos);
             
-            // Remove the preview
+            // Hapus elemen preview
             element.parentElement.remove();
-        };
+        }
         
-        // Function to remove size guide
+        // Fungsi untuk menghapus panduan ukuran
         window.removeSizeGuide = function() {
+            // Set flag untuk menghapus panduan ukuran
             document.getElementById('removeSizeGuide').value = '1';
-            document.getElementById('sizeGuidePreview').innerHTML = '';
-        };
+            
+            // Hapus elemen preview
+            document.getElementById('existingSizeGuidePreview').innerHTML = '<p class="text-muted">Panduan ukuran akan dihapus</p>';
+        }
+        
+        // Pastikan semua nilai tersimpan dengan benar sebelum submit
+        document.getElementById('productForm').addEventListener('submit', function(e) {
+            // Update harga umum
+            const hargaFormatted = document.getElementById('harga_formatted');
+            const hargaHidden = document.getElementById('harga');
+            hargaHidden.value = unformatRupiah(hargaFormatted.value);
+            
+            // Update semua harga variasi
+            document.querySelectorAll('.harga-variasi').forEach(input => {
+                const hiddenInput = input.nextElementSibling;
+                hiddenInput.value = unformatRupiah(input.value);
+            });
+        });
     });
 </script>
 @endsection

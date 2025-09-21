@@ -12,16 +12,29 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
-    public function index()
-    {
-        $produk = Product::with(['photos','sizes'])->get();
-        return view('admin.product.index', compact('produk'));
-    }
+  public function index()
+{
+    // ambil semua produk + relasi photos dan sizes
+    $produk = Product::with(['photos','sizes'])->paginate(10);
 
-    public function create()
-    {
-        return view('admin.product.create');
-    }
+    // bikin statistik
+    $statistik = [
+        'total'   => Product::count(),
+        'anak'    => Product::where('kategori', 'Anak-anak')->count(),
+        'remaja'  => Product::where('kategori', 'Remaja')->count(),
+        'dewasa'  => Product::where('kategori', 'Dewasa')->count(),
+        'preorder'=> Product::where('pre_order', true)->count(),
+        'ready'   => Product::where('pre_order', false)->count(),
+    ];
+
+    return view('admin.product.index', compact('produk', 'statistik'));
+}
+
+public function create()
+{
+    return view('admin.product.create');
+}
+
 
     public function store(Request $request)
 {
@@ -80,6 +93,12 @@ $data['stok']  = $request->stok ? preg_replace('/[^0-9]/', '', $request->stok) :
     }
 
     return redirect()->route('admin.products.manage')->with('success','Produk berhasil ditambahkan!');
+}
+
+public function show($id)
+{
+    $product = Product::with(['photos', 'sizes'])->findOrFail($id);
+    return view('admin.product.show', compact('product'));
 }
 
     
@@ -183,5 +202,46 @@ public function destroy(Product $product)
     return redirect()->route('admin.products.manage')
                      ->with('success','Produk berhasil dihapus!');
 }
+public function manage()
+{
+    // ambil semua produk
+    $produk = Product::paginate(10);
+
+    // bikin statistik
+    $statistik = [
+        'total' => Product::count(),
+        'anak' => Product::where('kategori', 'Anak-anak')->count(),
+        'remaja' => Product::where('kategori', 'Remaja')->count(),
+        'dewasa' => Product::where('kategori', 'Dewasa')->count(),
+        'preorder' => Product::where('pre_order', true)->count(),   // ✅ sesuai kolom boolean
+        'ready' => Product::where('pre_order', false)->count(),     // ✅ kebalikannya
+    ];
+
+    return view('admin.product.index', compact('produk', 'statistik'));
+}
+
+
+public function deletePhoto($id)
+{
+    $photo = ProductPhoto::findOrFail($id);
+    Storage::delete('public/'.$photo->path);
+    $photo->delete();
+
+    return response()->json(['success' => true]);
+}
+
+public function deleteSizeGuide($id)
+{
+    $produk = Product::findOrFail($id);
+    if($produk->panduan_ukuran){
+        Storage::delete('public/'.$produk->panduan_ukuran);
+        $produk->panduan_ukuran = null;
+        $produk->save();
+    }
+    return response()->json(['success' => true]);
+}
+
+
+
 
 };
